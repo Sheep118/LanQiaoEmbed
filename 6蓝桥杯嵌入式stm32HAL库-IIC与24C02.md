@@ -10,52 +10,56 @@
   >
   >```c
   >/**
-  >  * @brief I2C的短暂延时
-  >  * @param None
-  >  * @remark 80MHz,(以一条指令6个时间周期arm流水线)宏定义的延时是20次，
-  >  *         因此，是20*6*1/80M=3/2M ≈1.5us,满足t_low(min) = 1.2us,t_high(min) = 0.6us的要求
-  >  * @retval None
-  >  */
+  > * @brief I2C的短暂延时
+  > * @param None
+  > * @remark 80MHz,(以一条指令6个时间周期arm流水线)宏定义的延时是20次，
+  > *         因此，是20*6*1/80M=3/2M ≈1.5us,满足t_low(min) = 1.2us,t_high(min) = 0.6us的要求
+  > * @retval None
+  > */
   >static void delay1(unsigned int n)
   >{
-  >    uint32_t i;
-  >    for ( i = 0; i < n; ++i);
+  >   uint32_t i;
+  >   for ( i = 0; i < n; ++i);
   >}
   >```
   >
   >```c
   >/**
-  >  * @brief I2C等待确认信号
-  >  * @param None
-  >  * @attention 超时时间设置的是5个延时周期，不会一直死等
-  >  * @retval None
-  >  */
+  > * @brief I2C等待确认信号
+  > * @param None
+  > * @attention 超时时间设置的是5个延时周期，不会一直死等
+  > * @retval None
+  > */
   >unsigned char I2CWaitAck(void)
   >{
-  >    unsigned short cErrTime = 5;//超时时间是5次延时
-  >    SDA_Input_Mode();
-  >    delay1(DELAY_TIME);
-  >    SCL_Output(1);
-  >    delay1(DELAY_TIME);
-  >    while(SDA_Input())
-  >    {
-  >        cErrTime--;
-  >        delay1(DELAY_TIME);
-  >        if (0 == cErrTime)
-  >        {
-  >            SDA_Output_Mode();
-  >            I2CStop();
-  >            return ERROR;
-  >        }
-  >    }
-  >    SDA_Output_Mode();
-  >    SCL_Output(0);
-  >    delay1(DELAY_TIME);
-  >    return SUCCESS;
+  >   unsigned short cErrTime = 5;//超时时间是5次延时
+  >   SDA_Input_Mode();
+  >   delay1(DELAY_TIME);
+  >   SCL_Output(1);
+  >   delay1(DELAY_TIME);
+  >   while(SDA_Input())
+  >   {
+  >       cErrTime--;
+  >       delay1(DELAY_TIME);
+  >       if (0 == cErrTime)
+  >       {
+  >           SDA_Output_Mode();
+  >           I2CStop();
+  >           return ERROR;
+  >       }
+  >   }
+  >   SDA_Output_Mode();
+  >   SCL_Output(0);
+  >   delay1(DELAY_TIME);
+  >   return SUCCESS;
   >}
   >```
 
-  关于at24c02需要的延时时间要求，可以参考其手册：
+- B站上有位up主指出上面的等待Ack时最后有些问题，可以如下改：
+
+  ![image-20230124134711936](https://sheep-photo.oss-cn-shenzhen.aliyuncs.com/img/202301241347391.png)
+
+- 关于at24c02需要的延时时间要求，可以参考其手册：
 
   ![image-20230119172903511](https://sheep-photo.oss-cn-shenzhen.aliyuncs.com/img/202301191729526.png)
 
