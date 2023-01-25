@@ -122,6 +122,55 @@ void TIM6_DAC_IRQHandler(void)
 
 ### PWM输出
 
+#### CubeMX的配置
 
+- 需要注意的有以下两点：
+
+  - **是否开启了定时器的时钟源**，*因为通用定时器的时钟源默认是没有开启的*，**选择内部时钟源(Internal Clock)即可**
+  - **是否开启了 `ARR` 寄存器的重装载** ，只有开启这个，溢出后才会重新开始下一个PWM波。**`CCR`寄存器的重装载也是需要使能的** ，但默认配置为PWM输出时，CubeMX已经开启了。
+
+  CubeMX的配置可以参考下图：(TIM3CH1,PB4,1KHz,Duty 50%)
+
+  ![image-20230125232148920](https://sheep-photo.oss-cn-shenzhen.aliyuncs.com/img/202301252321113.png)
+
+  
+
+#### 代码的编写
+
+- 只需要注意**在 `while(1)` 前开启PWM的输出 `HAL_TIM_PWM_Start(<定时器句柄>, <通道宏>)`**即可。
+
+- 同时需要**掌握几个调节PWM的函数和宏**即可。
+
+  >`mian.c` 文件， `while(1)` 前开启PWM输出。
+  >
+  >```c
+  >HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_1);
+  >while(1)
+  >{
+  >    
+  >}
+  >```
+  >
+  >**几个调节PWM波的函数和宏**
+  >
+  >`__HAL_TIM_SET_AUTORELOAD(&htim3,arr_val)` 设置ARR寄存器的值，用于调节PWM波的频率。计算公式为：(PSC设置的初始值为79)
+  >$$
+  >freq_{PWM} = \frac{定时器时钟}{(ARR+1)(PSC+1)} = \frac{80M}{(ARR+1)(PSC+1)}
+  >$$
+  >`__HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,ccr_val)` 设置对应通道的CCR寄存器的值，用于调节PWM波的占空比。计算公式如下：(ARR初始值为999)
+  >$$
+  >Duty_{PWM} = \frac{CCR}{ARR+1}
+  >$$
+  >`__HAL_TIM_GET_AUTORELOAD(&htim3)` 获取定时器ARR寄存器的值
+  >
+  >`__HAL_TIM_GET_COMPARE(&htim3,TIM_CHANNEL_1)` 获取定时器指定通道CCR寄存器的值
+  >
+  >`HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_1)` 定时器指定通道的PWM波启动(使能)函数
+  >
+  >`  HAL_TIM_PWM_Stop(&htim3,TIM_CHANNEL_1)` 定时器指定通道的PWM波关闭(失能)函数
+  >
+  >注意：虽然HAL函数关于上面两个函数的注释都是`开启一次PWM波输出`  (和其他外设一样Start表示单次输出) 但由于我们使能了ARR的重装载和CCR的预装载 ，所以PWM波是会持续输出的。
+
+- 同时，由于我们没有开启中断(单纯PWM输出是可以不用开启中断的)，如果需要计算输出的脉冲个数，可以开启对应的比较中断或者溢出中断。
 
 ### PWM固定脉冲个数输出
